@@ -1,0 +1,540 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html  xmlns="http://www.w3.org/1999/xhtml">
+	<head prefix="og: http://ogp.me/ns# fb: http://ogp.me/ns/fb# website: http://ogp.me/ns/website#">
+		<meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+		<meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1" />
+		<meta name="viewport" content="width=device-width, initial-scale=1.3" />
+		<title>HTML5 Canvas based Terminal Website - Dwij Nuggets</title>
+		<meta name="description" content="HTML5 Canvas based Terminal Website" />
+		<meta name="keywords" content="terminal,shell,command line,html5,canvas" />
+		<meta name="author" content="Dwij IT Solutions" />
+		
+        <link href="css/normalize.css" rel="stylesheet" />
+        
+		<!------- Code Starts here ------->
+		<style>
+			body{margin:0;padding:0px;background:#000;}
+			@font-face {
+                font-family: 'Consolas';
+                font-style: normal;
+                font-weight: normal;
+                src: local('Courier'), local('Courier'), url(./fonts/Consolas.ttf) format('ttf');
+            }
+            #terminalCanvas{display:block;position:absolute;top:0px;left:0px;width:100%;height:100%;}
+            #cursorCanvas{display:block;position:absolute;top:0px;left:0px;width:100%;height:100%;}
+            #cursorCanvas {
+                animation: blink 1s steps(5, start) infinite;
+                -webkit-animation: blink 1s steps(2, start) infinite;
+            }
+            @keyframes blink {
+                to {
+                    visibility: hidden;
+                }
+            }
+            @-webkit-keyframes blink {
+                to {
+                    visibility: hidden;
+                }
+            }
+		</style>
+		<!------- Code ends here ------->
+	</head>
+
+	<body>
+        
+		<!------- Code Starts here ------->
+		
+		<canvas id="terminalCanvas"></canvas>
+		<canvas id="cursorCanvas"></canvas>
+        
+        <audio id="keySound" src="audio/button1.wav" ></audio>
+        
+		<script src="js/jquery-2.0.3.min.js"></script>
+		<script>
+            var keySound = document.getElementById("keySound");
+            keySound.volume = 0.2;
+            
+            var CANVAS_WIDTH = 0;
+			var CANVAS_HEIGHT = 0;
+            
+            var terminalCanvas;
+            var cursorCanvas;
+            var onResizeFun;
+            
+			var canvas = null;
+			var curCanvas = null;
+			var canvasElem = null;
+			var curCanvasElem = null;
+			var cContext = null;
+			var curContext = null;
+            
+            var totPadding = 20;
+            var fontHeight = 12;
+            var fontWidth = 7;
+            var lineHeight = 12;
+            var cntCurPosX = 0;
+            var cntCurPosY = 0;
+			var cntMenuPos = 0;
+            
+            var tData = null;
+            
+            var defaultConsolePath = "Dwij-IT-Solutions:~ guest$ ";
+            
+            /* --------------------- Dwij Bird --------------------- */
+            var birdXPos = 14;
+            var birdYPos = 0;
+            
+            var birdAnimFlow = 0;
+            
+            var languages = [
+                {language:"PHP", x: 47, y: 1},
+                {language:"jQuery", x: 46, y: 2},
+                {language:"C++", x: 53, y: 2},
+                {language:"Bootstrap", x: 45, y: 3},
+                {language:"WordPress", x: 45, y: 4},
+                {language:"Raspberry", x: 45, y: 5},
+                {language:"Assembly", x: 45, y: 6},
+                {language:"Chrome", x: 1, y: 6},
+                {language:"Linux", x: 3, y: 7},
+                {language:"Eclipse", x: 9, y: 7},
+                {language:"J2ME", x: 17, y: 7},
+                {language:"XML", x: 22, y: 7},
+                {language:"SEO", x: 26, y: 7},
+                {language:"Sql", x: 30, y: 7},
+                {language:"Javascript", x: 44, y: 7},
+                {language:"TCP-IP", x: 5, y: 8},
+                {language:"Web", x: 12, y: 8},
+                {language:"JSON", x: 16, y: 8},
+                {language:"RDBMS", x: 21, y: 8},
+                {language:"Java", x: 27, y: 8},
+                {language:"Swing", x: 32, y: 8},
+                {language:"HTML5", x: 44, y: 8},
+                {language:"UI", x: 50, y: 8},
+                {language:"UX", x: 53, y: 8},
+                {language:"Python", x: 7, y: 9},
+                {language:"Node.js", x: 14, y: 9},
+                {language:"Socket.IO", x: 22, y: 9},
+                {language:"Database", x: 32, y: 9},
+                {language:"Android", x: 44, y: 9},
+                {language:"Ruby", x: 52, y: 9},
+                {language:"SVN", x: 8, y: 10},
+                {language:"Joomla", x: 12, y: 10},
+                {language:"MemCached", x: 19, y: 10},
+                {language:"CMS", x: 29, y: 10},
+                {language:"iPhone", x: 33, y: 10},
+                {language:"DOM", x: 40, y: 10},
+                {language:"CSS3", x: 44, y: 10},
+                {language:"Zend", x: 49, y: 10},
+                {language:"FTP", x: 54, y: 10},
+                {language:"Ajax", x: 10, y: 11},
+                {language:"MySQL", x: 15, y: 11},
+                {language:"J2EE", x: 21, y: 11},
+                {language:"VC++", x: 26, y: 11},
+                {language:"Google", x: 31, y: 11},
+                {language:"API's", x: 38, y: 11},
+                {language:"C", x: 56, y: 11},
+                {language:"Macintosh", x: 11, y: 12},
+                {language:"UML", x: 21, y: 12},
+                {language:"C", x: 25, y: 12},
+                {language:"Bit", x: 27, y: 12},
+                {language:"FB", x: 31, y: 12},
+                {language:"Animation", x: 34, y: 12},
+                {language:"Objective-C", x: 12, y: 13},
+                {language:"Byte", x: 24, y: 13},
+                {language:"LAMP", x: 29, y: 13},
+                {language:"JNI", x: 34, y: 13},
+                {language:"ASCII", x: 38, y: 13},
+                {language:"Voice", x: 47, y: 13},
+                {language:"CPanel", x: 14, y: 14},
+                {language:"Servlet", x: 21, y: 14},
+                {language:"JSP", x: 29, y: 14},
+                {language:"Gaming", x: 33, y: 14},
+                {language:"C#", x: 40, y: 14},
+                {language:"CakePHP", x: 47, y: 14},
+                {language:"OpenCV", x: 16, y: 15},
+                {language:"JMF", x: 23, y: 15},
+                {language:"SVG", x: 27, y: 15},
+                {language:"CodeIgniter", x: 31, y: 15},
+                {language:"Wireless", x: 47, y: 15},
+                {language:"Ping", x: 18, y: 16},
+                {language:"Unix", x: 23, y: 16},
+                {language:"Apache", x: 28, y: 16},
+                {language:"Gaming", x: 35, y: 16},
+                {language:"Flawless", x: 47, y: 16},
+                {language:"Analytics", x: 21, y: 17},
+                {language:"Amazon", x: 31, y: 17},
+                {language:"EC2", x: 38, y: 17},
+                {language:"Framework", x: 46, y: 17},
+                {language:"Cloud", x: 26, y: 18},
+                {language:"Computing", x: 32, y: 18},
+                {language:"Hashtags", x: 46, y: 18},
+                {language:"WiFi", x: 37, y: 19},
+                {language:"Sessions", x: 46, y: 19},
+                {language:"Yii", x: 37, y: 20},
+                {language:"Gateways", x: 45, y: 20},
+                {language:"WebGL", x: 36, y: 21},
+                {language:"Console", x: 45, y: 21},
+                {language:"Video", x: 35, y: 22},
+                {language:"RIA", x: 45, y: 22},
+                {language:"Magento", x: 33, y: 23},
+                {language:"Responsive", x: 29, y: 24},
+                {language:"Django", x: 15, y: 25},
+                {language:"Bluetooth", x: 22, y: 25},
+                {language:"Paypal", x: 32, y: 25},
+                {language:"PhoneGap", x: 39, y: 25},
+                {language:"OpenGL", x: 18, y: 26},
+                {language:"Social", x: 25, y: 26},
+                {language:"Swift", x: 32, y: 26},
+                {language:"Data", x: 20, y: 27},
+                {language:"Mining", x: 25, y: 27},
+                {language:"Networking", x: 19, y: 28},
+                {language:"Research", x: 19, y: 29},
+                {language:"Media", x: 19, y: 30},
+				{language:"Dwij IT Solutions provides", x: 16, y: 35},
+				{language:"distinct Web & Mobile Development services to Industry, Educational Institutes", x: -10, y: 36},
+				{language:"and common people for improving their Business and Activities.", x: -4, y: 37},
+            ];
+                
+            /* --------------------- Wake up Neo ! --------------------- */
+            var wakeUpFlow = 0;
+            var wakeXPos = 14;
+            var wakeYPos = 0;
+            
+            var wake_up = [
+                {text:"Wake", x: defaultConsolePath.length, y: 0},
+                {text:"Up", x: defaultConsolePath.length + 5, y: 0},
+                {text:"Neo !", x: defaultConsolePath.length + 8, y: 0},
+            ];
+			
+			var menuFlow = 0;
+			var menuXPos = 0;
+			var menuYPos = 44;
+			
+			var show_menu_options = [
+				{text:"Dwij", x: 0, y: 0},
+				{text:"Services", x: 0, y: 1},
+				{text:"Dwij.SBS", x: 10, y: 0},
+				{text:"Tech.Blog", x: 30, y: 0},
+				{text:"Dwij", x: 40, y: 0},
+				{text:"Nuggets", x: 40, y: 1},
+            ];
+			
+			$(function() {
+				canvas = $("#terminalCanvas")
+				curCanvas = $("#cursorCanvas")
+				canvasElem = document.getElementById('terminalCanvas');
+				curCanvasElem = document.getElementById('cursorCanvas');
+				//curCanvasElem.addEventListener("keydown", doKeyDown, true);
+				cContext = canvasElem.getContext("2d");
+				curContext = curCanvasElem.getContext("2d");
+				
+				CANVAS_WIDTH = $(document).width();
+				CANVAS_HEIGHT = $(document).height();
+				
+				var boxCenter = [canvas.offset().left+canvas.width()/2, canvas.offset().top+canvas.height()/2];
+                
+                console.log(languages);
+				
+				terminalCanvas = {
+					draw: function() {
+                        cContext.fillStyle = "#EEE";
+                        cContext.font = ''+fontHeight+'px Consolas';
+                        
+                        this.writeConsole(defaultConsolePath, 0, 0, false);
+                        
+                        cntCurPosX = defaultConsolePath.length;
+					},
+                    drawDwijBird: function() {
+                        if(birdAnimFlow == 0) {
+                            cContext.fillStyle = "#EEE";
+                            cContext.font = ''+fontHeight+'px Consolas';
+                            birdXPos = (tData[0].length / 2) - 28;
+                            birdYPos = 3;
+                        }
+                        if(birdAnimFlow < languages.length) {
+                            this.writeConsole(languages[birdAnimFlow].language, birdYPos+languages[birdAnimFlow].y, birdXPos+languages[birdAnimFlow].x, true, false);
+							cursorCanvas.moveCursor((birdXPos+languages[birdAnimFlow].x + languages[birdAnimFlow].language.length), birdYPos+languages[birdAnimFlow].y, {mode:0});
+                            birdAnimFlow++;
+                            
+                            keySound.play();
+                            
+                            setTimeout(function() {
+                                terminalCanvas.drawDwijBird();
+                            }, 70);
+                        } else {
+                            setTimeout(function() {
+								terminalCanvas.show_menu();
+                            }, 3000);
+                            
+                        }
+					},
+                    
+                    wake_up_neo: function() {
+                        if(wakeUpFlow == 0) {
+                            cContext.fillStyle = "#EEE";
+                            cContext.font = ''+fontHeight+'px Consolas';
+                            wakeXPos = 0;
+                            wakeYPos = 0;
+                        }
+                        
+                        if(wakeUpFlow < wake_up.length) {
+                            this.writeConsole(wake_up[wakeUpFlow].text, wakeYPos+wake_up[wakeUpFlow].y, wakeXPos+wake_up[wakeUpFlow].x, true, false);
+                            cursorCanvas.moveCursor((wakeXPos+wake_up[wakeUpFlow].x + wake_up[wakeUpFlow].text.length), wakeYPos+wake_up[wakeUpFlow].y, {mode:0});
+                            wakeUpFlow++;
+                            
+                            keySound.play();
+                            
+                            setTimeout(function() {
+                                terminalCanvas.wake_up_neo();
+                            }, 300);
+                        } else {
+                            setTimeout(function() {
+                                terminalCanvas.drawDwijBird();
+                            }, 3000);
+                            
+                        }
+					},
+					
+					show_menu: function() {
+                        if(menuFlow == 0) {
+                            cContext.fillStyle = "#EEE";
+                            cContext.font = ''+fontHeight+'px Consolas';
+                        }
+                        
+						if(menuFlow < show_menu_options.length) {
+							//console.log("Write: "+show_menu_options[menuFlow].text+" at "+(menuXPos+show_menu_options[menuFlow].x)+"-"+(menuYPos+show_menu_options[menuFlow].y));
+							this.writeConsole(show_menu_options[menuFlow].text, menuYPos+show_menu_options[menuFlow].y, menuXPos+show_menu_options[menuFlow].x, true, false);
+							cursorCanvas.moveCursor((menuXPos+show_menu_options[menuFlow].x + show_menu_options[menuFlow].text.length), menuYPos+show_menu_options[menuFlow].y, {mode:0});
+                            menuFlow++;
+                            
+                            keySound.play();
+                            
+                            setTimeout(function() {
+								terminalCanvas.show_menu();
+                            }, 300);
+                        } else {
+                            setTimeout(function() {
+                                //terminalCanvas.drawDwijBird();
+                            }, 3000);
+                            
+                        }
+						cntMenuPos = 0;
+						cursorCanvas.moveCursor(0,0, {mode:1});
+					},
+                    
+                    writeConsole: function(text, row, col, wait, clearAll) {
+                        if(clearAll) {
+                            cContext.rect(0,0,CANVAS_WIDTH, CANVAS_HEIGHT);
+                        }
+                        for(var i=0;i < text.length; i++) {
+                            if((col + i) < tData[0].length && (row) < tData.length) {
+                                tData[row][col + i] = text[i];
+                                //console.log("Save: '"+text[i]+"' at ("+row+","+(col+i)+")");
+                                if(!clearAll) {
+                                    cContext.fillText(tData[row][col + i], ((totPadding-10)+((col+i)*fontWidth)), ((totPadding)+(row*lineHeight)));
+                                    if(wait) {
+                                        //sleep(200);
+                                    }
+                                }
+                            } else {
+                                //console.log("Save: '"+text[i]+"' at ("+row+","+(col+i)+") XXX");
+                            }
+                        }
+                        //console.log("----------");
+                        if(clearAll) {
+                            for(var i=0;i<tData.length; i++) {
+                                for(var j=0;j<tData[0].length; j++) {
+                                    if(tData[i][j] != " ") {
+                                        //console.log("Write: '"+tData[i][j]+"' at ("+i+","+j+") ("+((totPadding-10)+(i*fontWidth))+","+((totPadding-lineHeight/2)+(j*lineHeight))+") ");
+                                        cContext.fillText(tData[i][j], ((totPadding-10)+(j*fontWidth)), ((totPadding)+(i*lineHeight)));
+                                        if(wait) {
+                                            //sleep(200);
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+				};
+                
+                cursorCanvas = {
+					draw: function() {
+                        
+                        curContext.fillStyle = "#EEEEEE";
+                        curContext.beginPath();
+                        //curContext.strokeStyle = '#EEEEEE';
+                        curContext.lineWidth = 1;
+                        curContext.rect((totPadding-10)+(cntCurPosX*fontWidth), (totPadding-9)+(cntCurPosY*lineHeight), fontWidth, fontHeight-2);
+                        curContext.fill();
+					},
+                    moveCursor: function(xAxis, yAxis, style) {
+						if(style.mode == 0) {
+							//curContext.globalAlpha = 0;
+							curContext.beginPath();
+							curContext.clearRect(((totPadding-10)+(cntCurPosX*fontWidth))-1, ((totPadding-9)+(cntCurPosY*lineHeight))-1, fontWidth+2, fontHeight-1);
+							curContext.fill();
+
+							
+							cntCurPosX = xAxis;
+							cntCurPosY = yAxis;
+
+							curContext.fillStyle = "#EEEEEE";
+							curContext.beginPath();
+							curContext.rect((totPadding-10)+(cntCurPosX*fontWidth), (totPadding-9)+(cntCurPosY*lineHeight), fontWidth, fontHeight-2);
+							curContext.fill();
+						} else {
+							curContext.clearRect(0,0, CANVAS_WIDTH, CANVAS_HEIGHT);
+							curContext.fill();
+							
+							curContext.font = ''+fontHeight+'px Consolas';
+							switch(cntMenuPos) {
+								case 0:
+									curContext.fillStyle = "#EEEEEE";
+									curContext.beginPath();
+									curContext.rect((totPadding-10)+((menuXPos+show_menu_options[0].x) * fontWidth), ((totPadding/2)+1)+((menuYPos+show_menu_options[0].y)*lineHeight), (show_menu_options[0].text.length * fontWidth), fontHeight);
+									curContext.rect((totPadding-10)+((menuXPos+show_menu_options[1].x) * fontWidth), ((totPadding/2)+1)+((menuYPos+show_menu_options[1].y)*lineHeight), (show_menu_options[1].text.length * fontWidth), fontHeight);
+									curContext.fill();
+
+									curContext.fillStyle = "#000";
+									curContext.beginPath();
+									curContext.fillText(show_menu_options[0].text, ((totPadding-10)+((menuXPos+show_menu_options[0].x)*fontWidth)), ((totPadding)+((menuYPos+show_menu_options[0].y)*lineHeight)));
+									curContext.fillText(show_menu_options[1].text, ((totPadding-10)+((menuXPos+show_menu_options[1].x)*fontWidth)), ((totPadding)+((menuYPos+show_menu_options[1].y)*lineHeight)));
+									curContext.fill();
+									break;
+								case 1:
+									curContext.fillStyle = "#EEEEEE";
+									curContext.beginPath();
+									curContext.rect((totPadding-10)+((menuXPos+show_menu_options[2].x) * fontWidth), ((totPadding/2)+1)+((menuYPos+show_menu_options[2].y)*lineHeight), (show_menu_options[2].text.length * fontWidth), fontHeight);
+									curContext.fill();
+
+									curContext.fillStyle = "#000";
+									curContext.beginPath();
+									curContext.fillText(show_menu_options[2].text, ((totPadding-10)+((menuXPos+show_menu_options[2].x)*fontWidth)), ((totPadding)+((menuYPos+show_menu_options[2].y)*lineHeight)));
+									curContext.fill();
+									break;
+								case 2:
+									curContext.fillStyle = "#EEEEEE";
+									curContext.beginPath();
+									curContext.rect((totPadding-10)+((menuXPos+show_menu_options[3].x) * fontWidth), ((totPadding/2)+1)+((menuYPos+show_menu_options[3].y)*lineHeight), (show_menu_options[3].text.length * fontWidth), fontHeight);
+									curContext.fill();
+
+									curContext.fillStyle = "#000";
+									curContext.beginPath();
+									curContext.fillText(show_menu_options[3].text, ((totPadding-10)+((menuXPos+show_menu_options[3].x)*fontWidth)), ((totPadding)+((menuYPos+show_menu_options[3].y)*lineHeight)));
+									curContext.fill();
+									break;
+								case 3:
+									curContext.fillStyle = "#EEEEEE";
+									curContext.beginPath();
+									curContext.rect((totPadding-10)+((menuXPos+show_menu_options[4].x) * fontWidth), ((totPadding/2)+1)+((menuYPos+show_menu_options[4].y)*lineHeight), (show_menu_options[4].text.length * fontWidth), fontHeight);
+									curContext.rect((totPadding-10)+((menuXPos+show_menu_options[5].x) * fontWidth), ((totPadding/2)+1)+((menuYPos+show_menu_options[5].y)*lineHeight), (show_menu_options[5].text.length * fontWidth), fontHeight);
+									curContext.fill();
+
+									curContext.fillStyle = "#000";
+									curContext.beginPath();
+									curContext.fillText(show_menu_options[4].text, ((totPadding-10)+((menuXPos+show_menu_options[4].x)*fontWidth)), ((totPadding)+((menuYPos+show_menu_options[4].y)*lineHeight)));
+									curContext.fillText(show_menu_options[5].text, ((totPadding-10)+((menuXPos+show_menu_options[5].x)*fontWidth)), ((totPadding)+((menuYPos+show_menu_options[5].y)*lineHeight)));
+									curContext.fill();
+									break;
+							}
+						}
+					}
+				};
+				
+				onResizeFun = function() {
+					CANVAS_WIDTH = $(window).width();
+					CANVAS_HEIGHT = $(window).height();
+					cw = canvasElem.width = curCanvasElem.width = CANVAS_WIDTH;
+					ch = canvasElem.height = curCanvasElem.height = CANVAS_HEIGHT;
+					$("#terminalCanvas").width(CANVAS_WIDTH);
+					$("#terminalCanvas").height(CANVAS_HEIGHT);
+                    $("#cursorCanvas").width(CANVAS_WIDTH);
+					$("#cursorCanvas").height(CANVAS_HEIGHT);
+					console.log(CANVAS_WIDTH+" "+CANVAS_HEIGHT);
+					boxCenter = [canvas.offset().left+canvas.width()/2, canvas.offset().top+canvas.height()/2];
+                    
+                    /*
+                    totPadding = 20;
+                    fontHeight = 12;
+                    fontWidth = 7;
+                    lineHeight
+					*/
+                    var cols = parseInt((CANVAS_WIDTH - (totPadding*2)) / fontWidth);
+                    var rows = parseInt((CANVAS_HEIGHT - (totPadding*2)) / lineHeight);
+                    
+                    //console.log("Array: "+cols+" : "+rows);
+                    tData = createArray(rows, cols);
+					
+					menuXPos = ((cols/4)/2-3);
+					
+					show_menu_options = [
+						{text:"Dwij", x: ((cols/4)*0), y: 0},
+						{text:"Services", x: ((cols/4)*0)-2, y: 1},
+						{text:"Dwij.SBS", x: ((cols/4)*1), y: 0},
+						{text:"Tech.Blog", x: ((cols/4)*2), y: 0},
+						{text:"Dwij", x: ((cols/4)*3), y: 0},
+						{text:"Nuggets", x: ((cols/4)*3)-1, y: 1},
+					];
+                    
+                    
+					terminalCanvas.draw();
+					cursorCanvas.draw();
+					
+				};
+
+				onResizeFun();
+                
+                setTimeout(function() {
+                    terminalCanvas.wake_up_neo();
+                }, 3000);
+				
+				$("body").keydown(function(e) {
+					if (e.which == 37) {
+						if(cntMenuPos > 0) {
+							cntMenuPos--;
+							cursorCanvas.moveCursor(0,0, {mode:1});
+						}
+					} else  if (e.which == 39) {
+						if(cntMenuPos < 4) {
+							cntMenuPos++;
+							cursorCanvas.moveCursor(0,0, {mode:1});
+						}
+					} else  if (e.which == 13) {
+						switch(cntMenuPos) {
+						case 0:
+							window.open("http://dwijitsolutions.com",'_blank');
+							break;
+						case 1:
+							window.open("http://dwijitsolutions.com/sbs",'_blank');
+							break;
+						case 2:
+							window.open("http://dwij.co.in",'_blank');
+							break;
+						case 3:
+							window.open("http://dwij.in/nuggets",'_blank');
+							break;
+						}
+					}
+				});
+				
+            });
+            
+            $(window).resize(function() {onResizeFun();});
+            
+			function createArray(r, c) {
+                var array = [];
+                for(var i=0;i<r; i++) {
+                    // create row
+                    var row = new Array(c);
+                    for(var j=0;j<c; j++) {
+                        row[j] = " ";
+                    }
+                    array[i] = row;
+                }
+                return array;
+            }
+		</script>
+		
+		<!------- Code ends here ------->
+	</body>
+</html>
