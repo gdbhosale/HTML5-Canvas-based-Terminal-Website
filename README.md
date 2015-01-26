@@ -5,5 +5,5 @@ This example is created using two simple HTML5 Canvases.
 2. Canvas to emulate Cursor Blink
 
 Keywords:
-#html5 #nuggets #canvas #terminal #javascript #website #simulation #css3 #programming
-#commandline #shell #web #design #pune #india #designer #developer #development
+html5, nuggets, canvas, terminal, javascript, website, simulation, css3, programming,
+commandline, shell, web, design, pune, india, designer, developer, development
