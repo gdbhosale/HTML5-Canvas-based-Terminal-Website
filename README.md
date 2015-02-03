@@ -13,6 +13,7 @@ This example is created using two simple HTML5 Canvases.
 **JS framework**: jQuery
 
 The whole animation works in three parts:
+
 1.  Basic Terminal Setup
 2.  Printing "Wake up Neo !!!"
 3.  Printing "Dwij Bird"
