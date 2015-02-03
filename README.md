@@ -21,3 +21,5 @@ The whole animation works in three parts:
 **Keywords:**
 
 html5, nuggets, canvas, terminal, javascript, website, simulation, css3, programming, commandline, shell, web, design, pune, india, designer, developer, development
+
+Created by [Ganesh Bhosale](http://ganeshbhosale.com) at [Dwij IT Solutions](http://dwijitsolutions.com)
